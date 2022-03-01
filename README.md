@@ -17,7 +17,7 @@ Then follow the guide [here](https://docs.px4.io/master/en/ros/ros2_comm.html).
 
 # Test autonomous flight package in Gazebo  
 a. Source ROS2 install:  
-  source ~/ros2_foxy/ros2-linux/setup.bash
+  source ~/ros2_foxy/ros2-linux/setup.bash  
 b. Source ROS2-PX4 comm package:  
   source ~/px4_ros_com_ros2/install/setup.bash
 
