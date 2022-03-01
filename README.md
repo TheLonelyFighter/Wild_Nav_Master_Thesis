@@ -1,5 +1,5 @@
 # Wild_Nav_Master_Thesis
-ROS2 and PX4 autonomous drone package.
+Autonomous drone path planning using ROS2 and PX4.
 
 # Setting up the environment
 
