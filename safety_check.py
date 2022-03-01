@@ -34,6 +34,29 @@ class Waypoint():
         else:
             return False
 
+class Odometry():
+    
+    def __init__(self, x = 0.0, y = 0.0, z = 0.0, pitch = 0.0, roll = 0.0, yaw = 0.0):  #change default values here
+        
+        #Location Coordinates
+        self.x = x #meters
+        self.y = y
+        self.z = z
+
+        #Rotation Parameters
+        self.pitch = pitch #angle in radians # [-PI:PI]
+        self.roll = roll # [-PI:PI]
+        self.yaw = yaw  # [-PI:PI]
+
+        #Speed Parameters
+        self.vx = 0
+        self.vy = 0
+        self.vz = 0
+
+    def __str__(self):
+        return "Position x,y,z: %f, %f, %f" % (self.x, self.y,self.z)
+
+
 class SafetyCheck(Node):
 
     def __init__(self):
@@ -46,8 +69,9 @@ class SafetyCheck(Node):
 
 
         #Define safety area coordinates where flight is allowed
+        self.distance_list = []
         self.max_altitude = 3 # meters
-        self.max_distance_from_home = 3 # meters, distance from initial position (0,0,0), radius of a circle in XoY plane where drone can fly
+        self.max_distance_from_home = 2 # meters, distance from initial position (0,0,0), radius of a circle in XoY plane where drone can fly
         self.max_distance_between_waypoints = 0.5 # meters, maximum distance between current position and next waypoint
 
         self.current_waypoint_pos = Waypoint()
@@ -79,12 +103,14 @@ class SafetyCheck(Node):
 
         #TODO
         #if safety checks fail ONCE, then next setpoints sent by path node should not be published
-        print("Current Position ",  self.current_waypoint_pos)
-        print("Next Waypoint ", waypoint_from_path_node)
+        next_waypoint = Waypoint(waypoint_from_path_node.x,waypoint_from_path_node.y,waypoint_from_path_node.z)
 
-        self.ALL_GOOD  = self.perform_safety_check(waypoint_from_path_node)
+        print("Current Position ",  self.current_waypoint_pos)
+        print("Next Waypoint ", next_waypoint)
+
+        self.ALL_GOOD  = self.perform_safety_check(next_waypoint)
         if (self.ALL_GOOD == True and self.SAFETY_CHECK_FAILED == False):            
-            print("All good")
+            #print("All good")
             self.trajectory_out_pub.publish(waypoint_from_path_node)
         else:
             print("Something went wrong, landing")
@@ -96,7 +122,7 @@ class SafetyCheck(Node):
     def odom_callback(self, msg):
         self.current_waypoint_pos.x = msg.x
         self.current_waypoint_pos.y = msg.y
-        self.current_waypoint_pos.z = float(-msg.z) #Don't forget PX4 uses NED coordinate system
+        self.current_waypoint_pos.z = float(msg.z) #Don't forget PX4 uses NED coordinate system
         #print(self.current_waypoint_pos)
 
     def timesync_callback(self, msg):
@@ -126,13 +152,20 @@ class SafetyCheck(Node):
     def perform_safety_check(self, next_waypoint):
         all_good = True
         distance_consecutive = self.calculate_distance(self.current_waypoint_pos, next_waypoint)
+        self.distance_list.append(distance_consecutive)
+        self.distance_list.sort()
+        f = open("distances.txt", "w")
+        f.write(str(self.distance_list))
+        f.close()
         distance_home = self.calculate_distance(self.home_waypoint, next_waypoint)
+
+        if distance_consecutive > 0.4:
+            print("Distance between 2 consectutive waypoints: ", distance_consecutive)
 
         if (self.current_waypoint_pos.z >= self.max_altitude):
             all_good = False
             self.SAFETY_CHECK_FAILED = True
             print("Maximum altidude exceeded, drone will land. Altidude:", self.current_waypoint_pos.z)
-        
         if (distance_consecutive >= self.max_distance_between_waypoints):
             all_good = False
             self.SAFETY_CHECK_FAILED = True
@@ -142,11 +175,7 @@ class SafetyCheck(Node):
             all_good = False
             self.SAFETY_CHECK_FAILED = True
             print("Drone too far away from home, will land. Distance: ", distance_home)
-        
-        return all_good
-
-        
-        
+       
         return all_good
 
     def calculate_distance(self, waypoint_1, waypoint_2):

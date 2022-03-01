@@ -84,10 +84,10 @@ class FlyDrone(Node):
         self.LAND = False #signals if drone has landed
     
 
-        self.home_waypoint = Waypoint(0,0,10) # set take off altitude here
+        self.home_waypoint = Waypoint(0,0,1.0) # set take off altitude here
         self.current_pos_waypoint = Waypoint(0,0,0) #current position, starts in (0,0,0)
         #define trajectory
-        self.waypoints_list = [Waypoint(-5,-5,2.5),Waypoint(1,1,2.5),Waypoint(1,3,2.5),Waypoint(1,3,7.5)]
+        self.waypoints_list = [Waypoint(1.0,0.0,1),Waypoint(1.0,1.0,1),Waypoint(0.0,1.0,1)]
         self.waypoint_counter = 0
 
         self.odom_pos = Odometry() #current position, starts in (0,0,0), contains speed and yaw also
@@ -195,13 +195,14 @@ class FlyDrone(Node):
         msg.thrust[0] = float("nan")
         msg.thrust[1] = float("nan")
         msg.thrust[2] = float("nan")
-        #self.trajectory_setpoint_pub.publish(msg) #do not publish directly to setpoint topic
         self.safety_check_pub.publish(msg) #publish to safety node to check if the drone can move without killing anyone (hopefully)
 
     #Functions that returns a waypoint close enough to the current drone position
     #so that flight is smooth
-    #Change default speed factor for slower/faster movement
-    def compute_path(self, curr_waypoint, goal_waypoint, speed = 0.5):
+    #Change default speed factor for slower/faster movement,
+    #Takeoff: bigger than 0.5 values for speed make consecutive waypoints more than 0.5 meters apart, which triggers emergency landing
+    #in the 
+    def compute_path(self, curr_waypoint, goal_waypoint, speed = 0.2):
         alpha = speed #constant that controls speed
         curr_pos = np.array([curr_waypoint.x, curr_waypoint.y, curr_waypoint.z])
         goal_pos = np.array([goal_waypoint.x, goal_waypoint.y, goal_waypoint.z])
@@ -220,7 +221,7 @@ class FlyDrone(Node):
             print("ARMED cmd sent")
 
         if self.TAKE_OFF == False and self.ARMED == True and self.current_pos_waypoint != self.home_waypoint: #make sure you reach the take off altitude before moving the drone elsewhere
-            small_waypoint = self.compute_path(self.current_pos_waypoint, self.home_waypoint, 1) #for take off, set speed factor to a higher value                              
+            small_waypoint = self.compute_path(self.current_pos_waypoint, self.home_waypoint, 0.7) #for take off, set speed factor to a higher value                              
             print("Taking off")
 
         if self.TAKE_OFF == False and self.current_pos_waypoint == self.home_waypoint:
