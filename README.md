@@ -15,15 +15,15 @@ Build PX4 using guide [here](https://docs.px4.io/master/en/dev_setup/building_px
 Install only Fast-RTPS-Gen using the guide [here](https://docs.px4.io/master/en/dev_setup/fast-dds-installation.html) because Fast DDS comes pre-installed with ROS2  Foxy.  
 Then follow the guide [here](https://docs.px4.io/master/en/ros/ros2_comm.html).
 
-# Test autonomous flight package in Gazebo
-a. Source ROS2 install:
+# Test autonomous flight package in Gazebo  
+a. Source ROS2 install:  
   source ~/ros2_foxy/ros2-linux/setup.bash
-b. Source ROS2-PX4 comm package:
+b. Source ROS2-PX4 comm package:  
   source ~/px4_ros_com_ros2/install/setup.bash
 
-c. Launch simulation:
-  make px4_sitl_rtps gazebo
-d. Launch RTPS agent used for communication between ROS2-PX4
-  micrortps_agent -t UDP
+c. Launch simulation:  
+  make px4_sitl_rtps gazebo  
+d. Launch RTPS agent used for communication between ROS2-PX4  
+  micrortps_agent -t UDP  
 e. Finally run python package
 
