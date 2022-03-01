@@ -8,7 +8,7 @@ Open source autonomous drone path planning package written in python using [ROS2
 Check out the guide [here](https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Binary.html) for binary install.
 
 ## 2.  PX4 Autopilot (hang in there, this one is quite tough :))
-Install dependencies using the guide [here](https://docs.px4.io/master/en/dev_setup/dev_env_linux_ubuntu.html) 
+Install dependencies using the guide [here](https://docs.px4.io/master/en/dev_setup/dev_env_linux_ubuntu.html)    
 Build PX4 using guide [here](https://docs.px4.io/master/en/dev_setup/building_px4.html)
 
 ## 3. ROS2-PX4 Bridge
