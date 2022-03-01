@@ -12,7 +12,7 @@ Install dependencies using the guide [here](https://docs.px4.io/master/en/dev_se
 Build PX4 using guide [here](https://docs.px4.io/master/en/dev_setup/building_px4.html)
 
 ## 3. ROS2-PX4 Bridge
-Install only Fast-RTPS-Gen using the guide here(https://docs.px4.io/master/en/dev_setup/fast-dds-installation.html), Fast DDS comes pre-installed with ROS2  Foxy.
+Install only Fast-RTPS-Gen using the guide [here](https://docs.px4.io/master/en/dev_setup/fast-dds-installation.html), Fast DDS comes pre-installed with ROS2  Foxy.
 Then follow the guide [here](https://docs.px4.io/master/en/ros/ros2_comm.html)
 
 # Test autonomous fligh package in Gazebo
