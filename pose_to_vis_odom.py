@@ -37,7 +37,7 @@ class MinimalSubscriber(Node):
         self.visual_odom_pub.publish(visual_odom_msg)
 
 
-        self.visual_odom_pub.publish
+        
 
     
 
