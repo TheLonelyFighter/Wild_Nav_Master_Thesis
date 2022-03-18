@@ -10,11 +10,23 @@ from px4_msgs.msg import VehicleCommand
 
 import numpy as np
 
+#Set to True when using Gazebo and False and using the real drone
+SIMULATION_ENABLED = True
 
-
-
-
-
+if SIMULATION_ENABLED:
+    vehicle_command_topic = '/fmu/vehicle_command/in'
+    offboard_control_mode_topic = 'fmu/offboard_control_mode/in'
+    timesync_topic = '/fmu/timesync/out'
+    vehicle_odometry_topic = '/fmu/vehicle_odometry/out'
+    vehicle_control_mode_topic = '/fmu/vehicle_control_mode/out'
+    trajectory_setpoint_topic = '/fmu/trajectory_setpoint/in'
+else:
+    vehicle_command_topic = 'VehicleCommand_PubSubTopic'
+    offboard_control_mode_topic = 'OffboardControlMode_PubSubTopic'
+    timesync_topic = 'Timesync_PubSubTopic'
+    vehicle_odometry_topic = 'VehicleVisualOdometry_PubSubTopic'
+    vehicle_control_mode_topic = 'VehicleControlMode_PubSubtopic'
+    trajectory_setpoint_topic = 'TrajectorySetpoint_PubSubTopic'
 class Waypoint():
     
     position_error = 0.1 # maximum error in meters between the drone and the waypoint 

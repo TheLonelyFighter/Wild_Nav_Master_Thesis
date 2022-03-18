@@ -26,9 +26,21 @@ from px4_msgs.msg import VehicleLocalPosition
 from px4_msgs.msg import VehicleOdometry
 from px4_msgs.msg import VehicleControlMode
 
+#Set to True when using Gazebo and False and using the real drone
+SIMULATION_ENABLED = True
 
-
-
+if SIMULATION_ENABLED:
+    vehicle_command_topic = '/fmu/vehicle_command/in'
+    offboard_control_mode_topic = 'fmu/offboard_control_mode/in'
+    timesync_topic = '/fmu/timesync/out'
+    vehicle_odometry_topic = '/fmu/vehicle_odometry/out'
+    vehicle_control_mode_topic = '/fmu/vehicle_control_mode/out'
+else:
+    vehicle_command_topic = 'VehicleCommand_PubSubTopic'
+    offboard_control_mode_topic = 'OffboardControlMode_PubSubTopic'
+    timesync_topic = 'Timesync_PubSubTopic'
+    vehicle_odometry_topic = 'VehicleVisualOdometry_PubSubTopic'
+    vehicle_control_mode_topic = 'VehicleControlMode_PubSubtopic'
 class Waypoint():
     
     position_error = 0.1 # maximum error in meters between the drone and the waypoint 
@@ -96,15 +108,14 @@ class FlyDrone(Node):
         self.counter = 0
 
         #PUBLISHERS
-        self.vehicle_command_pub = self.create_publisher(VehicleCommand, '/fmu/vehicle_command/in', 10)
-        self.offboard_control_pub = self.create_publisher(OffboardControlMode, 'fmu/offboard_control_mode/in', 10)
-        #self.trajectory_setpoint_pub = self.create_publisher(TrajectorySetpoint, '/fmu/trajectory_setpoint/in', 10)
+        self.vehicle_command_pub = self.create_publisher(VehicleCommand, vehicle_command_topic, 10)
+        self.offboard_control_pub = self.create_publisher(OffboardControlMode, offboard_control_mode_topic, 10)
         self.safety_check_pub = self.create_publisher(TrajectorySetpoint, '/safety_check', 10)
 
         #SUBSCRIPTIONS
-        self.timesync_sub = self.create_subscription(Timesync, '/fmu/timesync/out', self.timesync_callback, 10)
-        self.odom_sub = self.create_subscription(VehicleOdometry,'/fmu/vehicle_odometry/out', self.odom_callback, 10)
-        self.vehicle_status_sub = self.create_subscription(VehicleControlMode,'/fmu/vehicle_control_mode/out', self.vehicle_status_callback, 10)
+        self.timesync_sub = self.create_subscription(Timesync, timesync_topic, self.timesync_callback, 10)
+        self.odom_sub = self.create_subscription(VehicleOdometry,vehicle_odometry_topic, self.odom_callback, 10)
+        self.vehicle_status_sub = self.create_subscription(VehicleControlMode,vehicle_control_mode_topic, self.vehicle_status_callback, 10)
 
 
 
