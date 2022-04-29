@@ -1,8 +1,8 @@
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-import imutils
 import csv
+import time
 
 
 class GeoPhoto:
@@ -23,6 +23,7 @@ def csv_read(filename):
     "big_photo_2.png",60.506787,22.311631,60.501037,22.324467
     """
     geo_list = []
+    photo_path = "../photos/map/"
     with open(filename) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
@@ -31,8 +32,8 @@ def csv_read(filename):
                 print(f'Column names are {", ".join(row)}')
                 line_count += 1
             else:                
-                img = cv.imread(row[0],0)
-                geo_photo = GeoPhoto(row[0],img,(float(row[1]),float(row[2])), (float(row[3]), float(row[4])))
+                img = cv.imread(photo_path + row[0],0)
+                geo_photo = GeoPhoto(photo_path + row[0],img,(float(row[1]),float(row[2])), (float(row[3]), float(row[4])))
                 geo_list.append(geo_photo)
                 line_count += 1
 
@@ -46,7 +47,7 @@ def good_sift_matches(img1, geo_photo):
     """
     img2 = geo_photo.photo
     localized = False
-    MIN_MATCH_COUNT = 10 # this is important, is less matches are 
+    MIN_MATCH_COUNT = 15 # this is important, is less matches are 
     # Initiate SIFT detector
     sift = cv.SIFT_create()
     # find the keypoints and descriptors with SIFT
@@ -72,10 +73,19 @@ def good_sift_matches(img1, geo_photo):
         matchesMask = mask.ravel().tolist()
         h,w = img1.shape
         pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+        #Returns a 4 elements array with the pixel coordinates of the found patch in the satellite photo
         dst = cv.perspectiveTransform(pts,M)
+        print(dst[0])
+        #If the perspective transform return any negative values, then the patch has not been found
+        #Note: it can actually correctly return negative values when the found patch is positioned
+        #on the border between 2 satellite photos
+        if (dst < 0).any():
+            print("Something went terribly wrong with perspectiveTransform function")
+            localized = False
+        print(type(dst))
         img2 = cv.polylines(img2,[np.int32(dst)],True,255,3, cv.LINE_AA)
         center = (((dst[0][0][0] + dst[3][0][0]) / 2), (dst[0][0][1] + dst[2][0][1]) / 2)
-        print(center)
+        print("Center of the found patch in the big satellite photo (pixel): ", center)
         current_lat = geo_photo.top_left_coord[0] + (center[1] / geo_photo.photo.shape[0]) * ( geo_photo.bottom_right_coord[0] - geo_photo.top_left_coord[0])
         current_lon = geo_photo.top_left_coord[1] + (center[0] / geo_photo.photo.shape[1]) * ( geo_photo.bottom_right_coord[1] - geo_photo.top_left_coord[1])
     else:
@@ -85,38 +95,40 @@ def good_sift_matches(img1, geo_photo):
                    singlePointColor = None,
                    matchesMask = matchesMask, # draw only inliers
                    flags = 2)
-    img3 = cv.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
-    plt.imshow(img3, 'gray')
-    plt.show()
+    #img3 = cv.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
+    #plt.imshow(img3, 'gray')
+    #plt.show()
 
     if localized:
         return (current_lat,current_lon)
     else:
          return None,None
 
-geo_images_list = csv_read("photo_coordinates.csv")
-print(geo_images_list[0])
 
+#Read all the geo tagged images that make up the sattelite map used for reference
+geo_images_list = csv_read("../photos/map/photo_coordinates.csv")
+#Read the drone camera photo
+#patch = cv.imread('../photos/query/small_photo_1.png',0) # drone_image
+patch = cv.imread('../photos/segmented/buildings.png',0) # drone_image
+
+
+#Calculate current position by searching the current drone photo in the map
+start = time.time()
 for photo in geo_images_list:
     print(photo)
-
-img1 = cv.imread('big_photo_2.png',0)          # queryImage
-img2 = cv.imread('small_photo_6.png',0) # trainImage
-
-
-#Geographical coordinates of the big sattelite patch
-geo_top_left = (60.506787,   22.311631)
-geo_bottom_right = (60.501037,  22.324467)
-
-
-geo_photo = GeoPhoto("example",img1, geo_top_left, geo_bottom_right)
+    start = time.time()
+    current_position = good_sift_matches(patch, photo)
+    stop = time.time()
+    total_time = stop - start
+    print("Time elapsed: ", total_time)
+    print("Current position: ", current_position)
+stop = time.time()
+total_time = stop - start
+print("Time elapsed: ", total_time)
 
 
-
-current_position = good_sift_matches(img2,geo_images_list[3])
-# print("Matches: ",len(good_matches))
-
-print(current_position)
+#NOTE: When the drone is moving on the border between 2 map squares, it cannot find features consistently, because a searched 
+#patch may not be contained fully by any of the sattelite photos. Possible fix: make sattelite photos overlap by 10% (?) of their pixel size
 
 
 #Rotated images also work, but it's better to use images with the same orientation as
