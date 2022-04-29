@@ -1,8 +1,10 @@
+
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 import csv
 import time
+import color_mask
 
 
 class GeoPhoto:
@@ -47,7 +49,7 @@ def good_sift_matches(img1, geo_photo):
     """
     img2 = geo_photo.photo
     localized = False
-    MIN_MATCH_COUNT = 15 # this is important, is less matches are 
+    MIN_MATCH_COUNT = 10 # this is important, is less matches are 
     # Initiate SIFT detector
     sift = cv.SIFT_create()
     # find the keypoints and descriptors with SIFT
@@ -95,9 +97,9 @@ def good_sift_matches(img1, geo_photo):
                    singlePointColor = None,
                    matchesMask = matchesMask, # draw only inliers
                    flags = 2)
-    #img3 = cv.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
-    #plt.imshow(img3, 'gray')
-    #plt.show()
+    img3 = cv.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
+    plt.imshow(img3, 'gray')
+    plt.show()
 
     if localized:
         return (current_lat,current_lon)
@@ -109,7 +111,20 @@ def good_sift_matches(img1, geo_photo):
 geo_images_list = csv_read("../photos/map/photo_coordinates.csv")
 #Read the drone camera photo
 #patch = cv.imread('../photos/query/small_photo_1.png',0) # drone_image
-patch = cv.imread('../photos/segmented/buildings.png',0) # drone_image
+drone_image = cv.imread('../photos/segmented/photo_8.png',0) # drone_image
+segmented_img = cv.imread("../photos/segmented/mask_8.png") # segmented_image
+
+#Eliminate this kind of conversion in final version, they are time consuming and useless.
+segmented_img = cv.cvtColor(segmented_img, cv.COLOR_BGR2RGB)
+
+
+x,y,w,h = color_mask.extract_rectangle_building(segmented_img)
+
+patch = drone_image[y:y+h, x:x+w]
+cv.rectangle(drone_image,(x,y),(x+w,y+h),(0,255,0),2)
+plt.imshow(drone_image, 'gray')
+plt.show()
+
 
 
 #Calculate current position by searching the current drone photo in the map
