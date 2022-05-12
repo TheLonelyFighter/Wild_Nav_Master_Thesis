@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import csv
 import time
 import color_mask
+import imutils
 
 
 class GeoPhoto:
@@ -72,6 +73,11 @@ def good_sift_matches(img1, geo_photo):
         src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
         dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC,5.0)
+        print(type(src_pts))
+        print("src_pts", src_pts)
+        print("**********")
+        print(type(dst_pts))
+        print("dst_pts", dst_pts)
         matchesMask = mask.ravel().tolist()
         h,w = img1.shape
         pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
@@ -106,14 +112,38 @@ def good_sift_matches(img1, geo_photo):
     else:
          return None,None
 
+def resize_image(img, scale):
+    """
+    Takes and image and returns the downscaled version.
+    """
+    print('Original Dimensions : ',img.shape)
+ 
+    width = int(img.shape[1] * scale / 100)
+    height = int(img.shape[0] * scale / 100)
+    dim = (width, height)
+    
+    # resize image
+    resized = cv.resize(img, dim, interpolation = cv.INTER_AREA)
+    
+    print('Resized Dimensions : ',resized.shape)
+    return resized
+
 
 #Read all the geo tagged images that make up the sattelite map used for reference
-geo_images_list = csv_read("../photos/map/photo_coordinates.csv")
+geo_images_list = csv_read("../photos/map/map_2_castle.csv")
 #Read the drone camera photo
 #patch = cv.imread('../photos/query/small_photo_1.png',0) # drone_image
-drone_image = cv.imread('../photos/segmented/photo_8.png',0) # drone_image
-segmented_img = cv.imread("../photos/segmented/mask_8.png") # segmented_image
+# drone_image = cv.imread('../photos/segmented/photo_3.png',0) # drone_image
+# segmented_img = cv.imread("../photos/segmented/mask_3.png") # segmented_image
 
+#drone_image = cv.imread('../photos/query/set_4_best/drone_11.png',0) # drone_image
+drone_image = cv.imread("../photos/query/real_dataset_1/matrice_300_session_2/photo_10.JPG",0) # drone_image
+drone_image = resize_image(drone_image, 25)
+rotated = imutils.rotate(drone_image, 180)
+# plt.imshow(rotated, 'gray')
+# plt.show()
+segmented_img = cv.imread("../photos/segmented/real_dataset_1/matrice_300_session_2/photo_10.png") # segmented_image
+segmented_img = resize_image(segmented_img, 25)
 #Eliminate this kind of conversion in final version, they are time consuming and useless.
 segmented_img = cv.cvtColor(segmented_img, cv.COLOR_BGR2RGB)
 
@@ -127,12 +157,13 @@ plt.show()
 
 
 
+
 #Calculate current position by searching the current drone photo in the map
 start = time.time()
 for photo in geo_images_list:
     print(photo)
     start = time.time()
-    current_position = good_sift_matches(patch, photo)
+    current_position = good_sift_matches(drone_image, photo)
     stop = time.time()
     total_time = stop - start
     print("Time elapsed: ", total_time)
