@@ -27,7 +27,7 @@ def match_image():
     sinkhorn_iterations = 20
     match_threshold = 0.5 # 0.2 in paper
     show_keypoints = "True"
-    no_display = "False"
+    no_display = True
     
    
     if len(resize) == 2 and resize[1] == -1:
@@ -93,8 +93,12 @@ def match_image():
     timer = AverageTimer()
 
     satellite_map_index = None
-    index = 1
+    index = 0
     max_matches = -1 
+    MATCHED = False
+    located_image = cv2.imread("/home/marius/Desktop/Thesis_gl_hf/Wild_Nav_Master_Thesis/photos/google_earth_cover.png")
+    features_mean = [0,0] #mean values of feature point coordinates
+    query_image = located_image
 
     while True:
         
@@ -126,22 +130,60 @@ def match_image():
         ******************************************
         """
         #At least 4 matched features are needed to compute homography
+        MATCHED = False
+        #located_image = last_frame
         print("Number of matches:", len(mkpts1))
         if (len(mkpts1) > 4):            
             M, mask = cv2.findHomography(mkpts0, mkpts1, cv2.RANSAC,5.0)
+            print("valid features:", mkpts1)
+            query_image = last_frame
+            #cv2.imshow("features", last_frame)
+            #cv2.waitKey()
+            #cv2.destroyAllWindows()
             matchesMask = mask.ravel().tolist()
-            h,w = frame.shape
+            h,w = last_frame.shape
+            #h = 400
+            #w = 500
+            print('Frame shape: ',last_frame.shape)
+            cv2.waitKey()
             pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
             dst = cv2.perspectiveTransform(pts,M)
+            #dst = cv2.warpPerspective(pts,M, (frame.shape[0], frame.shape[1]))
+            print("Rectangle ", dst)
             frame = cv2.polylines(frame,[np.int32(dst)],True,255,3, cv2.LINE_AA)
+            print("Shapes: ",frame.shape[0], frame.shape[1])
+            cv2.waitKey()
             if (len(mkpts1) > max_matches):                
-                center = (((dst[0][0][0] + dst[3][0][0]) / 2), (dst[0][0][1] + dst[2][0][1]) / 2)
+                #center = (int((dst[0][0][0] + dst[3][0][0]) / 2), int((dst[0][0][1] + dst[2][0][1]) / 2))
+                # middle_0_x = (dst[0][0][0] + dst[1][0][0]) / 2
+                # middle_0_y = (dst[0][0][1] + dst[1][0][1]) / 2
+                # middle_1_x = (dst[1][0][0] + dst[2][0][0]) / 2
+                # middle_1_y = (dst[1][0][1] + dst[2][0][1]) / 2
+                # middle_2_x = (dst[2][0][0] + dst[3][0][0]) / 2
+                # middle_2_y = (dst[2][0][1] + dst[3][0][1]) / 2
+                # middle_3_x = (dst[3][0][0] + dst[0][0][0]) / 2
+                # middle_3_y = (dst[3][0][1] + dst[0][0][1]) / 2
+                moments = cv2.moments(dst)
+                cX = int(moments["m10"] / moments["m00"])
+                cY = int(moments["m01"] / moments["m00"])
+                center = (cX  ,cY) #shape[0] is Y coord, shape[1] is X coord
+                #use ratio here instead of pixels because image is reshaped in superglue
+                features_mean = np.mean(mkpts0, axis = 0)
+                print("Features mean: ", features_mean)
+                print("Center: ", center)
+                print(frame.shape[0], frame.shape[1])
+                cv2.circle(frame, center, radius = 10, color = (255, 0, 255), thickness = 5)
+                cv2.circle(last_frame, (int(features_mean[0]), int(features_mean[1])), radius = 10, color = (255, 0, 0), thickness = 2)
+                center = (cX / frame.shape[1] ,cY /frame.shape[0] )
+                # cv2.imshow("map", frame)
+                # cv2.waitKey()
                 satellite_map_index = index
                 max_matches = len(mkpts1)
+                MATCHED = True
 
         else:
             print("Photos were NOT matched")
-        index += 1
+      
         color = cm.jet(confidence[valid])
         text = [
             'SuperGlue',
@@ -161,6 +203,11 @@ def match_image():
         out = make_matching_plot_fast(
             last_frame, frame, kpts0, kpts1, mkpts0, mkpts1, color, text,
             path=None, show_keypoints=show_keypoints, small_text=small_text)
+
+        if MATCHED == True:
+            located_image = out
+            cv2.imwrite("located_image.png", located_image)
+        
 
         if not no_display:
             cv2.imshow('SuperGlue matches', out)
@@ -193,6 +240,9 @@ def match_image():
 
         timer.update('viz')
         timer.print()
+        print("Index: ", index)
+        #cv2.waitKey()    
+        index += 1  
 
         if output_dir is not None:
             #stem = 'matches_{:06}_{:06}'.format(last_image_id, vs.i-1)
@@ -204,5 +254,7 @@ def match_image():
 
     cv2.destroyAllWindows()
     vs.cleanup()
-    return satellite_map_index, center
+    
+    return satellite_map_index, center, located_image, features_mean, last_frame
+    
 
