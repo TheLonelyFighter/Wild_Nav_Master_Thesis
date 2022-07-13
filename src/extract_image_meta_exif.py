@@ -3,9 +3,9 @@ import re
 import os
 
 
-csv_filename = "racer_drone.csv"
+csv_filename = "matrice_session_2.csv"
 
-photo_folder = '/home/marius/Desktop/4_may_dataset/small_dji_mini_2/100MEDIA/'
+photo_folder = '/home/marius/Desktop/Thesis_gl_hf/Wild_Nav_Master_Thesis/photos/query/real_dataset_1/matrice_300_session_2/'
  
 csv_filename = photo_folder + csv_filename
 
@@ -20,6 +20,8 @@ def load_images_from_folder(folder):
     for filename in os.listdir(folder):
         if filename.endswith((".JPG", ".jpg", ".png")):
             images_list.append(filename)
+
+    images_list.sort()
     return images_list
     
 
