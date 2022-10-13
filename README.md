@@ -1,3 +1,6 @@
+# This repository was migrated [here](https://github.com/TIERS/wildnav)
+
+
 # Wild_Nav_Master_Thesis
 Open source autonomous drone path planning package written in python using [ROS2](https://docs.ros.org/en/foxy/index.html) and [PX4](https://px4.io/) Autopilot.
 
